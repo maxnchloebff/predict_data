@@ -8,6 +8,7 @@ import  mysql.connector as connector
 import string
 import time
 import datetime
+import csv
 class reconstruct():
     def __init__(self,sensordata,valid_size,original_size,none_index):
         """
@@ -61,24 +62,44 @@ class reconstruct():
 
 
 if __name__ == "__main__":
+    f =  open('result.csv', 'w', newline='')
+    writer = csv.writer(f)
     mysql = connector.connect(user='root', password='00011122q', buffered=True, host='127.0.0.1')
     cursor = mysql.cursor()
     cursor.execute("use bigdata")
     time = datetime.datetime(year=2018, month=7, day=1, hour=0, minute=0, second=0 )
-    time_delta = datetime.timedelta(hours=1)
+    time_delta = datetime.timedelta(hours=2)
+    cursor.execute("select ts from table_1 ")
+    final_result = []
+    tem_time = cursor.fetchone()
+    while tem_time is not None:
+        final_result.append(tem_time)
+        tem_time = cursor.fetchone()
+    final_result = np.array(final_result)
     for num in range(68):
+        column = np.array([])
         while True:
-            if not time < datetime.datetime(year=2018, month=7, day=31, hour=23, minute=59, second=59 ):
+            if time >= datetime.datetime(year=2018, month=7, day=31, hour=23, minute=59, second=59 ):
+                time = datetime.datetime(year=2018, month=7, day=1, hour=0, minute=0, second=0 )
                 break
             print("Constructing var{}".format(num+1)+" now is" +str(time))
             cursor.execute("select var{} from table_1 where var{} is null and ts <'{}' and ts >'{}'".format(num+1,num+1,str(time+time_delta),str(time)) )
             result_invalid = cursor.fetchall()
             len_invalid = len(result_invalid)
+            cursor.execute(
+                "select var{} from table_1 where ts <'{}' and ts >'{}'".format(num + 1, str(time + time_delta),str(time)))
             if len_invalid ==0:
                 time = time + time_delta
+                tem = cursor.fetchone()
+                partial_column = []
+                while tem is not None:
+                    partial_column.append(tem[0])
+                    tem = cursor.fetchone()
+                partial_column = np.array(partial_column)
+                column = np.append(column,partial_column)
                 continue
             else:
-                cursor.execute("select var{} from table_1 where ts <'{}' and ts >'{}'".format(num+1,str(time+time_delta),str(time))  )
+
                 time = time + time_delta
                 tem = cursor.fetchone()
                 result_valid = []
@@ -101,18 +122,11 @@ if __name__ == "__main__":
             # print(len(result))
 
                 recon = reconstruct(sensordata=result_valid, original_size=len_all,none_index=none_index,valid_size=len_valid)
+                column = np.append(column, recon.result)
                 print("Reconstruct successful")
                 # image2 = Image.fromarray(recon.result[:,np.newaxis])
                 # image2.show()
+        final_result = np.stack(arrays=(final_result,column),axis=1)
+    writer.writerows(final_result)
 
 
-
-# select_nth_column = "select var{} from table_1 where var{} is not null"
-# s
-#
-# # print(select_fine)
-# # print(select_all_fine)
-# cursor.execute(use_database)
-# cursor.execute(select_nth_column.format(1,1))
-
-# predict_module(values_array)

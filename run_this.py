@@ -1,11 +1,4 @@
 #coding:utf-8
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# DCT基作为稀疏基，重建算法为OMP算法 ，图像按列进行处理
-# 参考文献: 任晓馨. 压缩感知贪婪匹配追踪类重建算法研究[D].
-#北京交通大学, 2012.
-#
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# 导入所需的第三方库文件
 import  numpy as np
 from PIL import Image
 import math
@@ -73,47 +66,44 @@ if __name__ == "__main__":
     cursor.execute("use bigdata")
     time = datetime.datetime(year=2018, month=7, day=1, hour=0, minute=0, second=0 )
     time_delta = datetime.timedelta(hours=1)
-    while True:
-        if not time < datetime.datetime(year=2018, month=7, day=31, hour=23, minute=59, second=59 ):
-            break
-        print(str(time))
-        cursor.execute("select var1 from table_1 where var1 is null and ts <'{}' and ts >'{}'".format(str(time+time_delta),str(time)) )
-        result_invalid = cursor.fetchall()
-        len_invalid = len(result_invalid)
-        if len_invalid ==0:
-            time = time + time_delta
-            continue
-        else:
-            cursor.execute("select var1 from table_1 where ts <'{}' and ts >'{}'".format(str(time+time_delta),str(time))  )
-            time = time + time_delta
-            tem = cursor.fetchone()
-            result_valid = []
-            none_index = []
-            result_all = []
-            i = 0
-            while tem is not None:
-                if tem[0] == None:
-                    none_index.append(i)
-                    result_all.append(tem[0])
-                else:
-                    result_valid.append(tem[0])
-                    result_all.append(tem[0])
+    for num in range(68):
+        while True:
+            if not time < datetime.datetime(year=2018, month=7, day=31, hour=23, minute=59, second=59 ):
+                break
+            print("Constructing var{}".format(num+1)+" now is" +str(time))
+            cursor.execute("select var{} from table_1 where var{} is null and ts <'{}' and ts >'{}'".format(num+1,num+1,str(time+time_delta),str(time)) )
+            result_invalid = cursor.fetchall()
+            len_invalid = len(result_invalid)
+            if len_invalid ==0:
+                time = time + time_delta
+                continue
+            else:
+                cursor.execute("select var{} from table_1 where ts <'{}' and ts >'{}'".format(num+1,str(time+time_delta),str(time))  )
+                time = time + time_delta
                 tem = cursor.fetchone()
-                i = i+1
-            result_valid = np.array(result_valid)
-            result_all = np.array(result_all)
-            len_valid = len(result_valid)
-            len_all = len(result_valid)+len(none_index)
-        # print(len(result))
+                result_valid = []
+                none_index = []
+                result_all = []
+                i = 0
+                while tem is not None:
+                    if tem[0] == None:
+                        none_index.append(i)
+                        result_all.append(tem[0])
+                    else:
+                        result_valid.append(tem[0])
+                        result_all.append(tem[0])
+                    tem = cursor.fetchone()
+                    i = i+1
+                result_valid = np.array(result_valid)
+                result_all = np.array(result_all)
+                len_valid = len(result_valid)
+                len_all = len(result_valid)+len(none_index)
+            # print(len(result))
 
-            recon = reconstruct(sensordata=result_valid, original_size=len_all,none_index=none_index,valid_size=len_valid)
-            # image2 = Image.fromarray(recon.result[:,np.newaxis])
-            # image2.show()
-
-
-
-
-
+                recon = reconstruct(sensordata=result_valid, original_size=len_all,none_index=none_index,valid_size=len_valid)
+                print("Reconstruct successful")
+                # image2 = Image.fromarray(recon.result[:,np.newaxis])
+                # image2.show()
 
 
 

@@ -1,6 +1,8 @@
 import numpy as np
 import math
 import random
+
+
 class CoSaMP():
     def __init__(self,sensordata,valid_size,original_size,none_index,sample_rate=0.7):
         self.sensor_data = sensordata
@@ -52,6 +54,7 @@ class CoSaMP():
             residual=sampled_data-np.dot(D,result)
         return  result
 
+
 class OMP():
     def __init__(self,sensordata,valid_size,original_size,none_index,sample_rate=0.7):
         self.sensordata = sensordata # of valid_size
@@ -101,6 +104,7 @@ class OMP():
             result[list] = a
         return result
 
+
 class Mean():
 
     def __init__(self,sensordata,valid_size,original_size,none_index):
@@ -132,9 +136,3 @@ class Mean():
         for index in self.none_index:
             result = np.insert(result,index,values=mean)
         return result
-
-
-
-
-
-

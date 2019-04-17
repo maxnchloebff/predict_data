@@ -22,6 +22,7 @@ def init_writer():
 if __name__ == "__main__":
     # initialize writer and write the final_result into result.csv document
     writer = init_writer()
+    
     # connect to mysql with mysql_connector
     mysql = connector.connect(user='root', password='00011122q', buffered=True, host='127.0.0.1')
     cursor = mysql.cursor()
@@ -127,5 +128,3 @@ if __name__ == "__main__":
         #  append this column(var) into the final result
         final_result = np.c_[final_result,column]
     writer.writerows(final_result)
-
-

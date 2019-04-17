@@ -8,9 +8,9 @@ from Enum_module import algorithm_mode
 
 """
 we have several option of MODE:
-OMP COSAMP IRLS SP MEAN IHT
+OMP COSAMP IRLS SP  IHT MEAN
 OMP and IRLS and SP have better performances
-OMP = IRLS > SP 
+OMP = IRLS > SP  and MEAN is the basic algorithm
 the others have serious problem which I don't understand(not fit in this problem)
 """
 MODE = algorithm_mode.SP

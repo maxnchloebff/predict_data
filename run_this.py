@@ -12,8 +12,10 @@ import csv
 import matplotlib.pyplot as plt
 from reconstruct_module import *
 
-USE_OMP = False
-USE_COSAMP = True
+USE_OMP = True
+USE_COSAMP = False
+SAMPLE_RATE = 0.9
+IF_PLOT = True
 
 
 
@@ -62,38 +64,51 @@ if __name__ == "__main__":
             # if there is none value in this time period
             else:
                 time = time + time_delta
-                tem = cursor.fetchone()
-                result_valid = [] # deposit value that is not none
+                tem = cursor.fetchone() # the tem unit of the sensordata
+                sensordata_valid = [] # deposit value that is not none
                 none_index = []  # deposit none index in this list
-                result_all = []  # deposit all values including none
+                sensordata_all = []  # deposit all values including none
                 i = 0
                 while tem is not None:
+                    # when encounter the none value, append the none index into list
+                    # and append the none value into sensordata_all
                     if tem[0] == None:
                         none_index.append(i)
-                        result_all.append(tem[0])
+                        sensordata_all.append(tem[0])
                     else:
-                        result_valid.append(tem[0])
-                        result_all.append(tem[0])
+                        sensordata_valid.append(tem[0])
+                        sensordata_all.append(tem[0])
                     tem = cursor.fetchone()
                     i = i+1
-                result_valid = np.array(result_valid)
-                result_all = np.array(result_all)
-                plt.plot(result_all)
-                len_valid = len(result_valid)
-                len_all = len(result_valid)+len(none_index)
-            # print(len(result))
+                sensordata_valid = np.array(sensordata_valid)  #  exclude none
+                sensordata_all = np.array(sensordata_all)  # include none value
+                if IF_PLOT:
+                    plt.subplot(211)
+                    plt.plot(sensordata_all)
+                #     length of valid sensordata
+                len_valid = len(sensordata_valid)
+                #     length of all sensordata
+                len_all = len(sensordata_valid)+len(none_index)
+                # get into reconstruct algorithm (three choices)
                 if USE_OMP:
-                    recon = OMP(sensordata=result_valid, original_size=len_all,none_index=none_index,valid_size=len_valid)
+                    recon = OMP(sensordata=sensordata_valid, original_size=len_all,
+                                none_index=none_index,valid_size=len_valid)
                 elif USE_COSAMP:
-                    recon = CoSaMP(sensordata=result_valid, original_size=len_all,none_index=none_index,valid_size=len_valid)
+                    recon = CoSaMP(sensordata=sensordata_valid, original_size=len_all,
+                                   none_index=none_index,valid_size=len_valid)
                 else:
-                    recon = Mean(sensordata=result_valid, original_size=len_all,none_index=none_index,valid_size=len_valid)
+                    recon = Mean(sensordata=sensordata_valid, original_size=len_all,
+                                 none_index=none_index,valid_size=len_valid)
+                #  append this time period into the whole column
                 column = np.append(column, recon.result)
-                plt.plot(recon.result)
-                plt.show()
+                if IF_PLOT:
+                    plt.subplot(212)
+                    plt.plot(recon.result)
+                    plt.show()
                 print("Reconstruct successful")
                 # image2 = Image.fromarray(recon.result[:,np.newaxis])
                 # image2.show()
+        #  append this column(var) into the final result
         final_result = np.c_[final_result,column]
     writer.writerows(final_result)
 

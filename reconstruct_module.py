@@ -2,13 +2,13 @@ import numpy as np
 import math
 import random
 class CoSaMP():
-    def __init__(self,sensordata,valid_size,original_size,none_index):
+    def __init__(self,sensordata,valid_size,original_size,none_index,sample_rate=0.7):
         self.sensor_data = sensordata
         self.valid_size = valid_size
         self.original_size = original_size
         self.none_index = none_index
         # 生成高斯随机测量矩阵
-        self.sampleRate = 0.5  # 采样率
+        self.sampleRate = sample_rate  # 采样率
         self.Phi = np.random.randn(int(self.valid_size * self.sampleRate),
                               self.valid_size)
         # 生成稀疏基DCT矩阵
@@ -53,14 +53,14 @@ class CoSaMP():
         return  result
 
 class OMP():
-    def __init__(self,sensordata,valid_size,original_size,none_index):
+    def __init__(self,sensordata,valid_size,original_size,none_index,sample_rate=0.7):
         self.sensordata = sensordata # of valid_size
         self.original_size = original_size
         self.valid_size = valid_size
         self.none_index = none_index
         # 生成高斯随机测量矩阵
-        sampleRate = 0.5  # 采样率
-        self.Phi = np.random.randn(int(self.valid_size * sampleRate),
+        self.sampleRate = sample_rate  # 采样率
+        self.Phi = np.random.randn(int(self.valid_size * self.sampleRate),
                               self.valid_size)
         # 生成稀疏基DCT矩阵
         self.mat_dct_1d = np.zeros((original_size, original_size))
@@ -68,7 +68,7 @@ class OMP():
         for loc in self.none_index:
             self.re_Phi = np.insert(self.re_Phi,
                                     loc, axis=1,
-                                    values=np.zeros((int(self.valid_size * sampleRate))))
+                                    values=np.zeros((int(self.valid_size * self.sampleRate))))
         v = range(original_size)
         for k in range(original_size):
             dct_1d = np.cos(np.dot(v, k * math.pi / original_size))
@@ -130,7 +130,7 @@ class Mean():
         # insert every mean into sensor_data
         result = self.sensor_data
         for index in self.none_index:
-            np.insert(result,index,values=mean)
+            result = np.insert(result,index,values=mean)
         return result
 
 

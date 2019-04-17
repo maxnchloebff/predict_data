@@ -33,6 +33,7 @@ if __name__ == "__main__":
     # set the length of time period
     time_delta = TIME_DELTA
     cursor.execute("select ts from table_1 ")
+
     #  initialize the final_result, append the ts into final_result
     final_result = []
     tem_time = cursor.fetchone()
@@ -40,6 +41,7 @@ if __name__ == "__main__":
         final_result.append(tem_time)
         tem_time = cursor.fetchone()
     final_result = np.array(final_result)
+
     # for every var go into a loop
     for num in range(START_VAR-1,68):
         column = np.array([])
@@ -53,6 +55,7 @@ if __name__ == "__main__":
             cursor.execute("select var{} from table_1 where var{} is null and ts <'{}' and ts >='{}'".format(num+1,num+1,str(time+time_delta),str(time)) )
             result_invalid = cursor.fetchall()
             len_invalid = len(result_invalid)
+
             # select all the value of the value
             cursor.execute(
                 "select var{} from table_1 where ts <'{}' and ts >='{}'".format(num + 1, str(time + time_delta),str(time)))

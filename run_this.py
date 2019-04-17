@@ -1,5 +1,4 @@
 #coding:utf-8
-from PIL import Image
 import mysql.connector as connector
 import datetime
 import csv
@@ -10,6 +9,7 @@ USE_OMP = True
 USE_COSAMP = False
 SAMPLE_RATE = 0.9
 IF_PLOT = True
+START_VAR  = 2
 
 def init_writer():
     f =  open('result.csv', 'w', newline='')
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         tem_time = cursor.fetchone()
     final_result = np.array(final_result)
     # for every var go into a loop
-    for num in range(0,68):
+    for num in range(START_VAR-1,68):
         column = np.array([])
         while True:
             # judge the range of time
@@ -94,11 +94,19 @@ if __name__ == "__main__":
                 len_all = len(sensordata_valid)+len(none_index)
                 # get into reconstruct algorithm (three choices)
                 if USE_OMP:
-                    recon = OMP(sensordata=sensordata_valid, original_size=len_all,
+                    if len_invalid >= 20:
+                        recon = OMP(sensordata=sensordata_valid, original_size=len_all,
+                                none_index=none_index,valid_size=len_valid, sample_rate=SAMPLE_RATE)
+                    else:
+                        recon = Mean(sensordata=sensordata_valid, original_size=len_all,
                                 none_index=none_index,valid_size=len_valid)
                 elif USE_COSAMP:
-                    recon = CoSaMP(sensordata=sensordata_valid, original_size=len_all,
-                                   none_index=none_index,valid_size=len_valid)
+                    if len_invalid >= 10:
+                        recon = CoSaMP(sensordata=sensordata_valid, original_size=len_all,
+                                   none_index=none_index,valid_size=len_valid, sample_rate=SAMPLE_RATE)
+                    else:
+                        reocn = Mean(sensordata=sensordata_valid, original_size=len_all,
+                                none_index=none_index,valid_size=len_valid)
                 else:
                     recon = Mean(sensordata=sensordata_valid, original_size=len_all,
                                  none_index=none_index,valid_size=len_valid)
@@ -109,8 +117,6 @@ if __name__ == "__main__":
                     plt.plot(recon.result)
                     plt.show()
                 print("Reconstruct successful")
-                # image2 = Image.fromarray(recon.result[:,np.newaxis])
-                # image2.show()
         #  append this column(var) into the final result
         final_result = np.c_[final_result,column]
     writer.writerows(final_result)

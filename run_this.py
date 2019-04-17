@@ -7,9 +7,12 @@ from reconstruct_module import *
 
 USE_OMP = True
 USE_COSAMP = False
-SAMPLE_RATE = 0.9
+SAMPLE_RATE = 1.2
 IF_PLOT = True
-START_VAR  = 2
+START_VAR  = 1
+VAR_MAXHOLD = 0.01
+START_TIME = datetime.datetime(year=2018, month=7, day=4, hour=0, minute=0, second=0 )
+TIME_DELTA = datetime.timedelta(hours=1)
 
 def init_writer():
     f =  open('result.csv', 'w', newline='')
@@ -25,10 +28,10 @@ if __name__ == "__main__":
     cursor.execute("use bigdata")
 
     # set the starting time with 2017-07-01-00:00:00
-    time = datetime.datetime(year=2018, month=7, day=1, hour=0, minute=0, second=0 )
+    time = START_TIME
 
     # set the length of time period
-    time_delta = datetime.timedelta(hours=1)
+    time_delta = TIME_DELTA
     cursor.execute("select ts from table_1 ")
     #  initialize the final_result, append the ts into final_result
     final_result = []
@@ -43,7 +46,7 @@ if __name__ == "__main__":
         while True:
             # judge the range of time
             if time >= datetime.datetime(year=2018, month=8, day=1, hour=0, minute=0, second=0 ):
-                time = datetime.datetime(year=2018, month=7, day=1, hour=0, minute=0, second=0 )
+                time = START_TIME
                 break
             print("Constructing var{}".format(num+1)+" now is" +str(time))
             # select the null var and calculate the num of none value
@@ -84,6 +87,7 @@ if __name__ == "__main__":
                     tem = cursor.fetchone()
                     i = i+1
                 sensordata_valid = np.array(sensordata_valid)  #  exclude none
+                sensor_var = np.var(sensordata_valid) # the variance of valid sensordata
                 sensordata_all = np.array(sensordata_all)  # include none value
                 if IF_PLOT:
                     plt.subplot(211)
@@ -94,14 +98,14 @@ if __name__ == "__main__":
                 len_all = len(sensordata_valid)+len(none_index)
                 # get into reconstruct algorithm (three choices)
                 if USE_OMP:
-                    if len_invalid >= 20:
+                    if sensor_var >= VAR_MAXHOLD:
                         recon = OMP(sensordata=sensordata_valid, original_size=len_all,
                                 none_index=none_index,valid_size=len_valid, sample_rate=SAMPLE_RATE)
                     else:
                         recon = Mean(sensordata=sensordata_valid, original_size=len_all,
                                 none_index=none_index,valid_size=len_valid)
                 elif USE_COSAMP:
-                    if len_invalid >= 10:
+                    if sensor_var >= VAR_MAXHOLD:
                         recon = CoSaMP(sensordata=sensordata_valid, original_size=len_all,
                                    none_index=none_index,valid_size=len_valid, sample_rate=SAMPLE_RATE)
                     else:

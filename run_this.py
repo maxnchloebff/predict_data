@@ -4,10 +4,17 @@ import datetime
 import csv
 import matplotlib.pyplot as plt
 from reconstruct_module import *
+from Enum_module import algorithm_mode
 
-USE_OMP = True
-USE_COSAMP = False
-SAMPLE_RATE = 1.2
+"""
+we have several option of MODE:
+OMP COSAMP IRLS SP MEAN IHT
+OMP and IRLS and SP have better performances
+OMP = IRLS > SP 
+the others have serious problem which I don't understand(not fit in this problem)
+"""
+MODE = algorithm_mode.SP
+SAMPLE_RATE = 0.7
 IF_PLOT = True
 START_VAR  = 1
 VAR_MAXHOLD = 0.01
@@ -101,23 +108,13 @@ if __name__ == "__main__":
                 #     length of all sensordata
                 len_all = len(sensordata_valid)+len(none_index)
                 # get into reconstruct algorithm (three choices)
-                if USE_OMP:
-                    if sensor_var >= VAR_MAXHOLD:
-                        recon = OMP(sensordata=sensordata_valid, original_size=len_all,
-                                none_index=none_index,valid_size=len_valid, sample_rate=SAMPLE_RATE)
-                    else:
-                        recon = Mean(sensordata=sensordata_valid, original_size=len_all,
-                                none_index=none_index,valid_size=len_valid)
-                elif USE_COSAMP:
-                    if sensor_var >= VAR_MAXHOLD:
-                        recon = CoSaMP(sensordata=sensordata_valid, original_size=len_all,
-                                   none_index=none_index,valid_size=len_valid, sample_rate=SAMPLE_RATE)
-                    else:
-                        reocn = Mean(sensordata=sensordata_valid, original_size=len_all,
-                                none_index=none_index,valid_size=len_valid)
+                if sensor_var >= VAR_MAXHOLD:
+                    recon = Reconstruct(sensordata=sensordata_valid,valid_size=len_valid,original_size=len_all,
+                                        none_index=none_index,using_method=MODE,sample_rate=SAMPLE_RATE)
                 else:
-                    recon = Mean(sensordata=sensordata_valid, original_size=len_all,
-                                 none_index=none_index,valid_size=len_valid)
+                    recon = Reconstruct(sensordata=sensordata_valid, valid_size=len_valid, original_size=len_all,
+                                        none_index=none_index, using_method=algorithm_mode.MEAN, sample_rate=SAMPLE_RATE)
+
                 #  append this time period into the whole column
                 column = np.append(column, recon.result)
                 if IF_PLOT:

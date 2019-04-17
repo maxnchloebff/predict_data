@@ -3,7 +3,7 @@
 #导入集成库
 import math
 import re
-from enum import Enum
+from Enum_module import Enum
 import  mysql.connector as connector
 import string
 import time

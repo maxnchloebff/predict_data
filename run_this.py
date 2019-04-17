@@ -1,12 +1,6 @@
 #coding:utf-8
-import  numpy as np
 from PIL import Image
-import math
-import re
-from enum import Enum
-import  mysql.connector as connector
-import string
-import time
+import mysql.connector as connector
 import datetime
 import csv
 import matplotlib.pyplot as plt
@@ -17,17 +11,26 @@ USE_COSAMP = False
 SAMPLE_RATE = 0.9
 IF_PLOT = True
 
-
-
-if __name__ == "__main__":
+def init_writer():
     f =  open('result.csv', 'w', newline='')
     writer = csv.writer(f)
+    return writer
+
+if __name__ == "__main__":
+    # initialize writer and write the final_result into result.csv document
+    writer = init_writer()
+    # connect to mysql with mysql_connector
     mysql = connector.connect(user='root', password='00011122q', buffered=True, host='127.0.0.1')
     cursor = mysql.cursor()
     cursor.execute("use bigdata")
+
+    # set the starting time with 2017-07-01-00:00:00
     time = datetime.datetime(year=2018, month=7, day=1, hour=0, minute=0, second=0 )
+
+    # set the length of time period
     time_delta = datetime.timedelta(hours=1)
     cursor.execute("select ts from table_1 ")
+    #  initialize the final_result, append the ts into final_result
     final_result = []
     tem_time = cursor.fetchone()
     while tem_time is not None:

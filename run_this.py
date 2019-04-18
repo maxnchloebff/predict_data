@@ -27,9 +27,10 @@ VAR_MAXHOLD = 0.01
 START_TIME = datetime.datetime(year=2018, month=7, day=4, hour=0, minute=0, second=0 )
 END_TIME =  datetime.datetime(year=2018, month=7, day=4, hour=2, minute=0, second=0 )
 TIME_DELTA = datetime.timedelta(hours=1)
-EPS = 1
-TEST_VAR = 1 # the tested var
-TIME_GAP = datetime.timedelta(minutes=20)  # used in trimming the valid data
+EPS = 1   # 保留恢复结果的小数点后几位，基本都是一位，传感器精度决定
+TEST_VAR = 1 # 我们检验的是几号变量
+TIME_GAP = datetime.timedelta(minutes=20)  # 人为挖去的数据长度，以分钟来表示
+TIME_CANDIDATE = range(40)  # 用于人为挖取数据时，随机挖去位置的候选list，长度为:TIME_DELTA-TIME_GAP
 
 def init_writer():
     f =  open('result.csv', 'w', newline='')
@@ -170,21 +171,30 @@ if __name__ == "__main__":
                 valid_time_list.append(time)
             time += time_delta
         time_gap = datetime.timedelta(minutes=20)
-        for date in valid_time_list:
-            time_point = datetime.timedelta(minutes=random.sample(range(40),1)[0])
+        """        
+        for every time period during which all the data is valid, then trim some data
+        and deposit the original sensordata in sensordata_original and deposit the 
+        trimmed sensor data in sensordata_trimmed
+        then we reconstruct the sensordata using sensordata_after_trimmed
+        finally calculate the error using method "evaluate" and plot the result 
+        """
+
+        for valid_time in valid_time_list:
+            #  initialize all the array
+            time_point = datetime.timedelta(minutes=random.sample(TIME_CANDIDATE,1)[0]) # sample a random time point to trim
             sensordata_original = []
             sensordata_none = []
             sensordata_after_trimmed = []
             sensordata_trimmed = []
             none_index = []
             sensordata_reconstructed = []
-            cursor.execute("select var{},ts from table_1 where ts <'{}' and ts >='{}'".format(TEST_VAR+1,str(date+time_delta),str(date)) )
+
+            # select all the data according to valid time and time_point
+            cursor.execute("select var{},ts from table_1 where ts <'{}' and ts >='{}'".format(TEST_VAR+1,str(valid_time+time_delta),str(valid_time)) )
             tem = cursor.fetchone()
             i = 0
             while tem is not None:
-                # when encounter the none value, append the none index into list
-                # and append the none value into sensordata_all
-                if tem[1]< (date + time_point) or tem[1] > (date+time_point + time_gap):
+                if tem[1]< (valid_time + time_point) or tem[1] > (valid_time+time_point + time_gap):
                     sensordata_original.append(tem[0])
                     sensordata_none.append(tem[0])
                     sensordata_after_trimmed.append(tem[0])
@@ -195,26 +205,27 @@ if __name__ == "__main__":
                     none_index.append(i)
                 tem = cursor.fetchone()
                 i += 1
-            print("Reconstructing "+str(date))
+            print("Reconstructing "+str(valid_time))
             sensordata_none = np.array(sensordata_none)
             sensordata_original = np.array(sensordata_original)
             sensordata_trimmed = np.array(sensordata_trimmed)
+            sensordata_after_trimmed = np.array(sensordata_after_trimmed)
+            len_original = len(sensordata_none)
+            len_valid = len(sensordata_after_trimmed)
+
+            # then reconstruct
+            recon = Reconstruct(sensordata=sensordata_after_trimmed,valid_size=len_valid,original_size=len_original,
+                                            none_index=none_index,using_method=MODE,sample_rate=SAMPLE_RATE)
+            sensordata_reconstructed = recon.result
+            sensordata_reconstructed = sensordata_reconstructed.round(EPS)
+            error = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed[none_index])
             if IF_PLOT:
                 plt.subplot(311)
                 plt.plot(sensordata_none)
                 plt.subplot(312)
                 plt.plot(sensordata_original)
-            sensordata_after_trimmed = np.array(sensordata_after_trimmed)
+                plt.subplot(313)
+                plt.plot(sensordata_reconstructed)
+                plt.text(x=50, y=29, s="error is " + str(error * 100) + "%", fontsize=20)
+                plt.show()
 
-            len_original = len(sensordata_none)
-            len_valid = len(sensordata_after_trimmed)
-            recon = Reconstruct(sensordata=sensordata_after_trimmed,valid_size=len_valid,original_size=len_original,
-                                            none_index=none_index,using_method=MODE,sample_rate=SAMPLE_RATE)
-            sensordata_reconstructed = recon.result
-            sensordata_reconstructed = sensordata_reconstructed.round(EPS)
-            plt.subplot(313)
-            plt.plot(sensordata_reconstructed)
-            error = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed[none_index])
-            # print(error)
-            plt.text(x=50, y=29, s="error is "+str(error*100)+"%", fontsize=20)
-            plt.show()

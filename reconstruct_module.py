@@ -46,11 +46,13 @@ class Reconstruct():
         self.result = np.dot(self.mat_dct_1d, result)
 
     def cs_CoSaMP(self, sampled_data,D):
-        S=math.floor(3*sampled_data.shape[0]/4)  #sparse
+        S=math.floor(sampled_data.shape[0]/4)  #sparse
         residual=sampled_data  #initialize the residual
         pos_last=np.array([],dtype=np.int64)
         result=np.zeros((self.original_size))
-        for j in range(int(S)):  #iteration times
+        eps = 0.01
+        iteration = 0
+        while iteration < int(S) and residual:  #iteration times
             product=np.fabs(np.dot(D.T,residual))
             pos_temp=np.argsort(product)
             pos_temp=pos_temp[::-1]#reverse the pos_tem
@@ -109,9 +111,9 @@ class Reconstruct():
         return hat_x_tp
 
     def cs_IHT(self,sampled_data, D):
-        K = math.floor(sampled_data.shape[0] / 4)  # 稀疏度
+        K = math.floor(sampled_data.shape[0] / 3)  # 稀疏度
         result_temp = np.zeros((self.original_size))  # 初始化重建信号
-        u = 0.5  # 影响因子
+        u = 1  # 影响因子
         result = result_temp
         for j in range(int(K)):  # 迭代次数
             x_increase = np.dot(D.T, (sampled_data - np.dot(D, result_temp)))  # x=D*(y-D*y0)

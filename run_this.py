@@ -18,14 +18,14 @@ the others have serious problem which I don't understand(not fit in this problem
 Also we can choose two debug mode:
 RECONSTRUCT or TEST
 """
-MODE = algorithm_mode.OMP
+MODE = algorithm_mode.IRLS
 DEBUG = debug_mode.TEST
 SAMPLE_RATE = 0.9
 IF_PLOT = True
 START_VAR  = 1
 VAR_MAXHOLD = 0.01
 START_TIME = datetime.datetime(year=2018, month=7, day=4, hour=0, minute=0, second=0 )
-END_TIME =  datetime.datetime(year=2018, month=7, day=4, hour=2, minute=0, second=0 )
+END_TIME =  datetime.datetime(year=2018, month=7, day=5, hour=0, minute=0, second=0 )
 TIME_DELTA = datetime.timedelta(hours=1)
 EPS = 1   # 保留恢复结果的小数点后几位，基本都是一位，传感器精度决定
 TEST_VAR = 1 # 我们检验的是几号变量
@@ -205,7 +205,7 @@ if __name__ == "__main__":
                     none_index.append(i)
                 tem = cursor.fetchone()
                 i += 1
-            print("Reconstructing "+str(valid_time))
+
             sensordata_none = np.array(sensordata_none)
             sensordata_original = np.array(sensordata_original)
             sensordata_trimmed = np.array(sensordata_trimmed)
@@ -214,12 +214,19 @@ if __name__ == "__main__":
             len_valid = len(sensordata_after_trimmed)
 
             # then reconstruct
+            print("Reconstructing " + str(valid_time))
             recon = Reconstruct(sensordata=sensordata_after_trimmed,valid_size=len_valid,original_size=len_original,
                                             none_index=none_index,using_method=MODE,sample_rate=SAMPLE_RATE)
             sensordata_reconstructed = recon.result
             sensordata_reconstructed = sensordata_reconstructed.round(EPS)
             error = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed[none_index])
             if IF_PLOT:
+                """
+                画出的三幅图分别是
+                1. 被人为截取后和缺失图
+                2. ground_truth 图
+                3. 用压缩感知恢复出的图像
+                """
                 plt.subplot(311)
                 plt.plot(sensordata_none)
                 plt.subplot(312)

@@ -24,8 +24,8 @@ SAMPLE_RATE = 0.9
 IF_PLOT = True
 START_VAR  = 1
 VAR_MAXHOLD = 0.01
-START_TIME = datetime.datetime(year=2018, month=7, day=3, hour=0, minute=0, second=0 )
-END_TIME =  datetime.datetime(year=2018, month=7, day=5, hour=0, minute=0, second=0 )
+START_TIME = datetime.datetime(year=2018, month=7, day=4, hour=0, minute=0, second=0 )
+END_TIME =  datetime.datetime(year=2018, month=7, day=4, hour=2, minute=0, second=0 )
 TIME_DELTA = datetime.timedelta(hours=1)
 EPS = 1
 TEST_VAR = 1 # the tested var
@@ -214,4 +214,7 @@ if __name__ == "__main__":
             sensordata_reconstructed = sensordata_reconstructed.round(EPS)
             plt.subplot(313)
             plt.plot(sensordata_reconstructed)
+            error = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed[none_index])
+            # print(error)
+            plt.text(x=50, y=29, s="error is "+str(error*100)+"%", fontsize=20)
             plt.show()

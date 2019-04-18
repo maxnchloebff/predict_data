@@ -2,7 +2,6 @@
 import mysql.connector as connector
 import datetime
 import csv
-import random
 import matplotlib.pyplot as plt
 from reconstruct_module import *
 from Enum_module import algorithm_mode
@@ -31,10 +30,26 @@ TIME_DELTA = datetime.timedelta(hours=1)
 EPS = 1
 TEST_VAR = 1 # the tested var
 TIME_GAP = datetime.timedelta(minutes=20)  # used in trimming the valid data
+
 def init_writer():
     f =  open('result.csv', 'w', newline='')
     writer = csv.writer(f)
     return writer
+
+def evaluate(ground_truth, reconstructed_data):
+    if len(ground_truth) != len(reconstructed_data):
+        print("the sizes are not matched")
+        return
+    length = len(ground_truth)
+    result = 0
+    for i in range(length):
+        tem = abs((ground_truth[i]-reconstructed_data[i])/ground_truth[i] )
+        result += tem
+    result = result/length
+    return result
+
+
+
 
 if __name__ == "__main__":
     # connect to mysql with mysql_connector

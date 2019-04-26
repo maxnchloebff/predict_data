@@ -6,7 +6,28 @@ import matplotlib.pyplot as plt
 from reconstruct_module import *
 from Enum_module import algorithm_mode
 from Enum_module import debug_mode
+"""
+一开始debug_mode　设置成　ＲＥＣＯＮＳＴＲＵＣＴ
+展示一下回复网站所给的数据的实际情况(说明，由于算法的特性，导致我们会付出的数据，其他部分
+会和真值不一样，　我们关注的，只是缺失的部分）
+接下把debug_mode　设成ＴＥＳＴ，我们就把原有的完好的数据筛选出来，
+然后人为的挖空，然后进行数据修复：
+纵向比较和横向比较
+压缩感知的不同迭代方法的误差比较
+普通方法和压缩感知误差比较
+压缩感知可以干的ｍｏｄｅ有ＯＭＰ，ＩＲＬＳ，SP可以用，这三个效果比较好(其他的也展示一下，迭代大部分情况失败）
+还可以改的参数有 SAMPLE_RATE 范围（０．５－１．０）
+debug_mode 
+"""
 
+"""
+数据预处理，粘贴ｐｐｔ中内容
+解释两个ｍｏｄｕｌｅ
+然后再回到ｒｕｎ_this的ｍａｉｎ中，
+最先说一些全局变量：
+先说第一个ｍｏｄｅ：ＲＥＣＯＮＳＴＲＣＴ
+再说第二个ｍｏｄｅ：ＴＥＳＴ
+"""
 
 """
 we have several options of MODE:
@@ -19,13 +40,13 @@ Also we can choose two debug mode:
 RECONSTRUCT or TEST
 """
 MODE = algorithm_mode.IRLS
-DEBUG = debug_mode.TEST
+DEBUG = debug_mode.RECONSTRUCT
 SAMPLE_RATE = 0.9
 IF_PLOT = True
 START_VAR  = 1
 VAR_MAXHOLD = 0.01
 START_TIME = datetime.datetime(year=2018, month=7, day=4, hour=0, minute=0, second=0 )
-END_TIME =  datetime.datetime(year=2018, month=7, day=5, hour=0, minute=0, second=0 )
+END_TIME =  datetime.datetime(year=2018, month=7, day=4, hour=3, minute=0, second=0 )
 TIME_DELTA = datetime.timedelta(hours=1)
 EPS = 1   # 保留恢复结果的小数点后几位，基本都是一位，传感器精度决定
 TEST_VAR = 1 # 我们检验的是几号变量
@@ -81,7 +102,7 @@ if __name__ == "__main__":
             column = np.array([])
             while True:
                 # judge the range of time
-                if time >= datetime.datetime(year=2018, month=8, day=1, hour=0, minute=0, second=0 ):
+                if time >= END_TIME:
                     time = START_TIME
                     break
                 print("Constructing var{}".format(num+1)+" now is" +str(time))
@@ -178,7 +199,8 @@ if __name__ == "__main__":
         then we reconstruct the sensordata using sensordata_after_trimmed
         finally calculate the error using method "evaluate" and plot the result 
         """
-
+        accumulated_error_cs = 0
+        accumulated_error_mean = 0
         for valid_time in valid_time_list:
             #  initialize all the array
             time_point = datetime.timedelta(minutes=random.sample(TIME_CANDIDATE,1)[0]) # sample a random time point to trim
@@ -215,24 +237,40 @@ if __name__ == "__main__":
 
             # then reconstruct
             print("Reconstructing " + str(valid_time))
-            recon = Reconstruct(sensordata=sensordata_after_trimmed,valid_size=len_valid,original_size=len_original,
+            recon_cs = Reconstruct(sensordata=sensordata_after_trimmed,valid_size=len_valid,original_size=len_original,
                                             none_index=none_index,using_method=MODE,sample_rate=SAMPLE_RATE)
-            sensordata_reconstructed = recon.result
-            sensordata_reconstructed = sensordata_reconstructed.round(EPS)
-            error = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed[none_index])
+            recon_mean = Reconstruct(sensordata=sensordata_after_trimmed,valid_size=len_valid,original_size=len_original,
+                                            none_index=none_index,using_method=algorithm_mode.MEAN,sample_rate=SAMPLE_RATE)
+            sensordata_reconstructed_cs = recon_cs.result
+            sensordata_reconstructed_mean = recon_mean.result
+            sensordata_reconstructed_cs = sensordata_reconstructed_cs.round(EPS)
+            sensordata_reconstructed_mean = sensordata_reconstructed_mean.round(EPS)
+            error_cs = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed_cs[none_index])
+            accumulated_error_cs += error_cs
+            error_mean = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed_mean[none_index])
+            accumulated_error_mean += error_mean
             if IF_PLOT:
                 """
                 画出的三幅图分别是
                 1. 被人为截取后和缺失图
                 2. ground_truth 图
                 3. 用压缩感知恢复出的图像
+                4. 用通俗方法还原出的ｄａｔａ
                 """
-                plt.subplot(311)
+                # plt.figure(figsize=(80,40))
+                plt.subplot(411)
+                plt.title("This is the data after trimmed")
                 plt.plot(sensordata_none)
-                plt.subplot(312)
+                plt.subplot(412)
+                plt.title("this is the ground_truth data")
                 plt.plot(sensordata_original)
-                plt.subplot(313)
-                plt.plot(sensordata_reconstructed)
-                plt.text(x=50, y=29, s="error is " + str(error * 100) + "%", fontsize=20)
+                plt.subplot(413)
+                plt.title("This is the data after reconstructed by CS")
+                plt.plot(sensordata_reconstructed_cs)
+                plt.ylabel("error is " + str(round(error_cs * 100, )) + "%", fontsize=20)
+                plt.subplot(414)
+                plt.title("This is the data after reconstructed by MEAN")
+                plt.plot(sensordata_reconstructed_mean)
+                plt.ylabel("error is " + str(round(error_mean * 100, )) + "%", fontsize=20)
                 plt.show()
 

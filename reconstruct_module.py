@@ -33,17 +33,23 @@ class Reconstruct():
         Theta_1d = np.dot(self.re_Phi, self.mat_dct_1d)  # measure matrix dot the base matrix
         if self.using_method == algorithm_mode.COSAMP:
             result = self.cs_CoSaMP(sampled_data=sampled_data, D=Theta_1d)
+            self.result = np.dot(self.mat_dct_1d, result)
         elif self.using_method == algorithm_mode.OMP:
             result = self.cs_omp(sampled_data,Theta_1d)
+            self.result = np.dot(self.mat_dct_1d, result)
         elif self.using_method == algorithm_mode.IRLS:
             result = self.cs_IRLS(sampled_data, Theta_1d)
+            self.result = np.dot(self.mat_dct_1d, result)
         elif self.using_method == algorithm_mode.IHT:
             result = self.cs_IHT(sampled_data,Theta_1d)
+            self.result = np.dot(self.mat_dct_1d, result)
         elif self.using_method == algorithm_mode.SP:
             result = self.cs_sp(sampled_data, Theta_1d)
+            self.result = np.dot(self.mat_dct_1d, result)
         else:
-            result = self.mean()
-        self.result = np.dot(self.mat_dct_1d, result)
+            self.result = self.mean()
+
+
 
     def cs_CoSaMP(self, sampled_data,D):
         S=math.floor(sampled_data.shape[0]/4)  #sparse

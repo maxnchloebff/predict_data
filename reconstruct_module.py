@@ -52,7 +52,7 @@ class Reconstruct():
             result = self.cs_sp(sampled_data, Theta_1d)
             self.result = np.dot(self.mat_dct_1d, result)
         elif self.using_method == algorithm_mode.KNN:
-            self.result = self.knn_filled()
+            self.result = self.knn()
         else:
             self.result = self.mean()
 
@@ -180,7 +180,7 @@ class Reconstruct():
             result = np.insert(result,index,values=mean)
         return result
 
-    def knn_filled(self):
+    def knn(self):
         # 数据
         df = list(self.sensor_data)
         for index in self.none_index:
@@ -193,15 +193,7 @@ class Reconstruct():
             data = np.append(data,data[-1])
         data = data.reshape((3,int(len(data)/3)))
         data = data.T
-        # for i in range(3):  # 以60分钟为周期分段（10分钟粒度, 6个为周期）
-        #     data1 = df[i:i + 6].reset_index(drop=True).rename(index=str(i))
-        #     data = np.hstack((data, data1))  # 整合为一个dataframe，多个列
-        # data_incomplete = np.array(data)  # 转为array
-        # 预测缺失值
         filled_knn = KNN(k=3).fit_transform(data)  # 利用knn填补缺失值
-        # data = pd.DataFrame(filled_knn)  # 保存结果
-        # for i in range(3):  # 把之前构造的多个列，在整合为一个列
-        #     df.loc[i:i + 287, "sump"] = data.loc[:, i / 288].values.tolist()
         result = filled_knn.flatten(order='F')
         if remainder != 0:
             result = result[0:-remainder]

@@ -2,6 +2,7 @@
 import mysql.connector as connector
 import datetime
 import csv
+
 import matplotlib.pyplot as plt
 from reconstruct_module import *
 from Enum_module import algorithm_mode
@@ -39,8 +40,8 @@ the others have serious problem which I don't understand(not fit in this problem
 Also we can choose two debug mode:
 RECONSTRUCT or TEST
 """
-MODE = algorithm_mode.IRLS
-DEBUG = debug_mode.RECONSTRUCT
+MODE = algorithm_mode.KNN
+DEBUG = debug_mode.TEST
 SAMPLE_RATE = 0.9
 IF_PLOT = True
 START_VAR  = 1
@@ -257,20 +258,22 @@ if __name__ == "__main__":
                 3. 用压缩感知恢复出的图像
                 4. 用通俗方法还原出的ｄａｔａ
                 """
-                # plt.figure(figsize=(80,40))
+
                 plt.subplot(411)
+                plt.figure(figsize=(10,10))
                 plt.title("This is the data after trimmed")
                 plt.plot(sensordata_none)
                 plt.subplot(412)
+                plt.figure(figsize=(80, 40))
                 plt.title("this is the ground_truth data")
                 plt.plot(sensordata_original)
                 plt.subplot(413)
+                plt.figure(figsize=(80, 40))
                 plt.title("This is the data after reconstructed by CS")
                 plt.plot(sensordata_reconstructed_cs)
-                plt.ylabel("error is " + str(round(error_cs * 100, )) + "%", fontsize=20)
                 plt.subplot(414)
+                plt.figure(figsize=(80, 40))
                 plt.title("This is the data after reconstructed by MEAN")
                 plt.plot(sensordata_reconstructed_mean)
-                plt.ylabel("error is " + str(round(error_mean * 100, )) + "%", fontsize=20)
                 plt.show()
 

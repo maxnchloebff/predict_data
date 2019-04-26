@@ -1,7 +1,12 @@
 import numpy as np
 import math
 import random
+import pandas as pd
+from fancyimpute import KNN
+import re
 from Enum_module import algorithm_mode
+
+
 
 
 class Reconstruct():
@@ -46,6 +51,8 @@ class Reconstruct():
         elif self.using_method == algorithm_mode.SP:
             result = self.cs_sp(sampled_data, Theta_1d)
             self.result = np.dot(self.mat_dct_1d, result)
+        elif self.using_method == algorithm_mode.KNN:
+            self.result = self.knn_filled()
         else:
             self.result = self.mean()
 
@@ -172,4 +179,31 @@ class Reconstruct():
         for index in self.none_index:
             result = np.insert(result,index,values=mean)
         return result
+
+    def knn_filled(self):
+        # 数据
+        df = list(self.sensor_data)
+        for index in self.none_index:
+            df.insert(index,None)
+        # 缺失填补
+        data = np.array(df)
+        remainder = len(data)%3
+        remainder = 3-remainder
+        for _ in range(remainder):
+            data = np.append(data,data[-1])
+        data = data.reshape((3,int(len(data)/3)))
+        data = data.T
+        # for i in range(3):  # 以60分钟为周期分段（10分钟粒度, 6个为周期）
+        #     data1 = df[i:i + 6].reset_index(drop=True).rename(index=str(i))
+        #     data = np.hstack((data, data1))  # 整合为一个dataframe，多个列
+        # data_incomplete = np.array(data)  # 转为array
+        # 预测缺失值
+        filled_knn = KNN(k=3).fit_transform(data)  # 利用knn填补缺失值
+        # data = pd.DataFrame(filled_knn)  # 保存结果
+        # for i in range(3):  # 把之前构造的多个列，在整合为一个列
+        #     df.loc[i:i + 287, "sump"] = data.loc[:, i / 288].values.tolist()
+        result = filled_knn.flatten(order='F')
+        if remainder != 0:
+            result = result[0:-remainder]
+        return  result
 

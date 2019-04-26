@@ -40,7 +40,7 @@ the others have serious problem which I don't understand(not fit in this problem
 Also we can choose two debug mode:
 RECONSTRUCT or TEST
 """
-MODE = algorithm_mode.KNN
+MODE = algorithm_mode.OMP
 DEBUG = debug_mode.TEST
 SAMPLE_RATE = 0.9
 IF_PLOT = True
@@ -70,9 +70,6 @@ def evaluate(ground_truth, reconstructed_data):
         result += tem
     result = result/length
     return result
-
-
-
 
 if __name__ == "__main__":
     # connect to mysql with mysql_connector
@@ -202,6 +199,7 @@ if __name__ == "__main__":
         """
         accumulated_error_cs = 0
         accumulated_error_mean = 0
+        accumulated_error_knn = 0
         for valid_time in valid_time_list:
             #  initialize all the array
             time_point = datetime.timedelta(minutes=random.sample(TIME_CANDIDATE,1)[0]) # sample a random time point to trim
@@ -242,14 +240,22 @@ if __name__ == "__main__":
                                             none_index=none_index,using_method=MODE,sample_rate=SAMPLE_RATE)
             recon_mean = Reconstruct(sensordata=sensordata_after_trimmed,valid_size=len_valid,original_size=len_original,
                                             none_index=none_index,using_method=algorithm_mode.MEAN,sample_rate=SAMPLE_RATE)
+            recon_knn = Reconstruct(sensordata=sensordata_after_trimmed,valid_size=len_valid,original_size=len_original,
+                                            none_index=none_index,using_method=algorithm_mode.KNN,sample_rate=SAMPLE_RATE)
             sensordata_reconstructed_cs = recon_cs.result
             sensordata_reconstructed_mean = recon_mean.result
+            sensordata_reconstructed_knn = recon_knn.result
             sensordata_reconstructed_cs = sensordata_reconstructed_cs.round(EPS)
             sensordata_reconstructed_mean = sensordata_reconstructed_mean.round(EPS)
+            sensordata_reconstructed_knn = sensordata_reconstructed_knn.round(EPS)
             error_cs = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed_cs[none_index])
-            accumulated_error_cs += error_cs
+
             error_mean = evaluate(ground_truth=sensordata_trimmed, reconstructed_data=sensordata_reconstructed_mean[none_index])
+            error_knn = evaluate(ground_truth=sensordata_trimmed,
+                                  reconstructed_data=sensordata_reconstructed_knn[none_index])
+            accumulated_error_cs += error_cs
             accumulated_error_mean += error_mean
+            accumulated_error_knn += error_knn
             if IF_PLOT:
                 """
                 画出的三幅图分别是
@@ -258,22 +264,25 @@ if __name__ == "__main__":
                 3. 用压缩感知恢复出的图像
                 4. 用通俗方法还原出的ｄａｔａ
                 """
-
-                plt.subplot(411)
-                plt.figure(figsize=(10,10))
+                plt.figure(figsize=(20,20))
+                plt.subplot(311)
                 plt.title("This is the data after trimmed")
                 plt.plot(sensordata_none)
-                plt.subplot(412)
-                plt.figure(figsize=(80, 40))
+                plt.subplot(323)
                 plt.title("this is the ground_truth data")
                 plt.plot(sensordata_original)
-                plt.subplot(413)
-                plt.figure(figsize=(80, 40))
+                plt.subplot(324)
                 plt.title("This is the data after reconstructed by CS")
                 plt.plot(sensordata_reconstructed_cs)
-                plt.subplot(414)
-                plt.figure(figsize=(80, 40))
+                plt.subplot(325)
+                plt.title("This is the data after reconstructed by MEAN")
+                plt.plot(sensordata_reconstructed_mean)
+                plt.subplot(326)
                 plt.title("This is the data after reconstructed by MEAN")
                 plt.plot(sensordata_reconstructed_mean)
                 plt.show()
+
+        print("The compressive sensing error is "+str(accumulated_error_cs/len(valid_time_list)))
+        print("The mean method error is " + str(accumulated_error_mean / len(valid_time_list)))
+        print("The knn method error is " + str(accumulated_error_knn / len(valid_time_list)))
 
